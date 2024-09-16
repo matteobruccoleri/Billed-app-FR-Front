@@ -86,28 +86,33 @@ export default class {
   }
 
   handleEditTicket(e, bill, bills) {
-    if (this.counter === undefined || this.id !== bill.id) this.counter = 0
-    if (this.id === undefined || this.id !== bill.id) this.id = bill.id
-    if (this.counter % 2 === 0) {
-      bills.forEach(b => {
-        $(`#open-bill${b.id}`).css({ background: '#0D5AE5' })
-      })
-      $(`#open-bill${bill.id}`).css({ background: '#2A2B35' })
-      $('.dashboard-right-container div').html(DashboardFormUI(bill))
-      $('.vertical-navbar').css({ height: '150vh' })
-      this.counter ++
-    } else {
-      $(`#open-bill${bill.id}`).css({ background: '#0D5AE5' })
-
+    // Vérifiez si un autre ticket est sélectionné
+    if (this.selectedBillId && this.selectedBillId !== bill.id) {
+      // Réinitialisez le style de l'ancien ticket sélectionné
+      $(`#open-bill${this.selectedBillId}`).css({ background: '#0D5AE5' });
+    }
+  
+    // Si le même ticket est cliqué à nouveau, il est déselectionné
+    if (this.selectedBillId === bill.id) {
+      // Remettre à zéro la sélection et réinitialiser l'affichage
+      $(`#open-bill${bill.id}`).css({ background: '#0D5AE5' });
       $('.dashboard-right-container div').html(`
         <div id="big-billed-icon" data-testid="big-billed-icon"> ${BigBilledIcon} </div>
-      `)
-      $('.vertical-navbar').css({ height: '120vh' })
-      this.counter ++
+      `);
+      $('.vertical-navbar').css({ height: '120vh' });
+      this.selectedBillId = null;
+    } else {
+      // Sinon, sélectionnez le nouveau ticket
+      $(`#open-bill${bill.id}`).css({ background: '#2A2B35' });
+      $('.dashboard-right-container div').html(DashboardFormUI(bill));
+      $('.vertical-navbar').css({ height: '150vh' });
+      this.selectedBillId = bill.id; // Mémorisez l'ID du ticket sélectionné
     }
-    $('#icon-eye-d').click(this.handleClickIconEye)
-    $('#btn-accept-bill').click((e) => this.handleAcceptSubmit(e, bill))
-    $('#btn-refuse-bill').click((e) => this.handleRefuseSubmit(e, bill))
+  
+    // Ajoutez les écouteurs pour les boutons "Accepter" et "Refuser"
+    $('#icon-eye-d').click(this.handleClickIconEye);
+    $('#btn-accept-bill').click((e) => this.handleAcceptSubmit(e, bill));
+    $('#btn-refuse-bill').click((e) => this.handleRefuseSubmit(e, bill));
   }
 
   handleAcceptSubmit = (e, bill) => {
@@ -133,24 +138,30 @@ export default class {
   handleShowTickets(e, bills, index) {
     if (this.counter === undefined || this.index !== index) this.counter = 0
     if (this.index === undefined || this.index !== index) this.index = index
-    if (this.counter % 2 === 0) {
-      $(`#arrow-icon${this.index}`).css({ transform: 'rotate(0deg)'})
+    
+    // Nous vérifions si la liste est déjà dépliée
+    const isListOpen = $(`#arrow-icon${this.index}`).css('transform') === 'rotate(0deg)';
+  
+    if (!isListOpen) {
+      // Si la liste est fermée, nous l'ouvrons
+      $(`#arrow-icon${this.index}`).css({ transform: 'rotate(0deg)' });
       $(`#status-bills-container${this.index}`)
-        .html(cards(filteredBills(bills, getStatus(this.index))))
-      this.counter ++
+        .html(cards(filteredBills(bills, getStatus(this.index))));
+  
+      this.counter++;
     } else {
-      $(`#arrow-icon${this.index}`).css({ transform: 'rotate(90deg)'})
-      $(`#status-bills-container${this.index}`)
-        .html("")
-      this.counter ++
+      // Si la liste est déjà ouverte, nous la fermons
+      $(`#arrow-icon${this.index}`).css({ transform: 'rotate(90deg)' });
+      $(`#status-bills-container${this.index}`).html("");
     }
-
+  
+    // Ajouter des écouteurs pour chaque ticket des listes ouvertes
     bills.forEach(bill => {
-      $(`#open-bill${bill.id}`).click((e) => this.handleEditTicket(e, bill, bills))
-    })
-
-    return bills
-
+      $(`#open-bill${bill.id}`).off('click');  // Supprimez tout événement de clic précédent pour éviter les doublons
+      $(`#open-bill${bill.id}`).click((e) => this.handleEditTicket(e, bill, bills));
+    });
+  
+    return bills;
   }
 
   getBillsAllUsers = () => {
