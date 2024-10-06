@@ -79,7 +79,6 @@ describe("Given I am connected as an employee", () => {
 })
 
 // test d'intégration GET Bills
-// Test d'intégration GET Bills
 describe("Given I am connected as an employee", () => {
   describe("When I navigate to the Bills page", () => {
     test("Then it should fetch bills from the mock API", async () => {
