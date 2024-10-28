@@ -98,6 +98,7 @@ describe("Given I am connected as an employee", () => {
         list: jest.fn().mockRejectedValueOnce({ response: { status: 404 } })
       }));
       document.body.innerHTML = BillsUI({ error: "Erreur 404" });
+      // Vérifie qu'un message d'erreur 404 est bien affiché
       const message = await screen.getByText(/Erreur 404/);
       expect(message).toBeTruthy();
     });
@@ -107,6 +108,7 @@ describe("Given I am connected as an employee", () => {
         list: jest.fn().mockRejectedValueOnce({ response: { status: 500 } })
       }));
       document.body.innerHTML = BillsUI({ error: "Erreur 500" });
+      // Vérifie qu'un message d'erreur 500 est bien affiché
       const message = await screen.getByText(/Erreur 500/);
       expect(message).toBeTruthy();
     });
