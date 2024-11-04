@@ -18,10 +18,12 @@ describe("Given I am connected as an employee", () => {
     // Test si l'icône de la facture est bien mis en surbrillancea en ayant la class "active-icon"
     test("Then bill icon in vertical layout should be highlighted", async () => {
 
+      // Simulation de localStorage pour simuler un utilisateur connecté
       Object.defineProperty(window, 'localStorage', { value: localStorageMock })
       window.localStorage.setItem('user', JSON.stringify({
         type: 'Employee'
       }))
+      
       const root = document.createElement("div")
       root.setAttribute("id", "root")
       document.body.append(root)
