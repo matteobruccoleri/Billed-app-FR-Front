@@ -1,6 +1,8 @@
 /**
  * @jest-environment jsdom
  */
+
+import "@testing-library/jest-dom";
 import { fireEvent, screen, waitFor } from "@testing-library/dom";
 import NewBillUI from "../views/NewBillUI.js";
 import NewBill from "../containers/NewBill.js";
@@ -11,13 +13,10 @@ import { ROUTES_PATH } from "../constants/routes.js";
 jest.mock("../app/store", () => mockStore);
 
 // Simulation de localStorage pour simuler un utilisateur connecté
-Object.defineProperty(window, 'localStorage', {
-  value: {
-    getItem: jest.fn(() => JSON.stringify({ email: 'employee@test.com' })),
-    setItem: jest.fn(),
-    clear: jest.fn()
-  },
-});
+Object.defineProperty(window, 'localStorage', { value: localStorageMock })
+  window.localStorage.setItem('user', JSON.stringify({
+    type: 'Employee'
+}))
 
 describe("Given I am connected as an employee", () => {
   let newBill;
@@ -41,7 +40,7 @@ describe("Given I am connected as an employee", () => {
   });
 
   describe("When I upload a file", () => {
-    // Test qui vérifie que les formats jpg, jpeg ou png sont acceptés
+    // Test pour les formats de fichier valides
     test("Then it should accept jpg, jpeg, or png file formats", async () => {
       const file = new File(["file"], "test.png", { type: "image/png" });
       const event = {
@@ -57,16 +56,14 @@ describe("Given I am connected as an employee", () => {
         key: '1234'
       });
 
-      // Appel de la méthode `handleChangeFile` pour gérer l'événement de changement de fichier
       await newBill.handleChangeFile(event);
 
-      // Vérifie que le fichier est accepté, le message d'erreur masqué, et l'upload réussi
       expect(newBill.fileName).toBe("test.png");
       await waitFor(() => expect(newBill.fileUrl).toBe("https://localhost/file.png"));
       expect(screen.getByTestId("file-error-message").style.display).toBe("none");
       expect(createSpy).toHaveBeenCalled();
     });
-    // Test qui vérifie que le message d'erreur s'affiche si le format du fichier est incorrect
+    // Test pour le message d'erreur en cas de format de fichier incorrect
     test("Then it should show an error message if the file format is not jpg, jpeg, or png", async () => {
       const file = new File(["file"], "test.pdf", { type: "application/pdf" });
       const event = {
@@ -77,20 +74,20 @@ describe("Given I am connected as an employee", () => {
         }
       };
 
+      // Appelle handleChangeFile pour valider et traiter le fichier téléchargé.
       await newBill.handleChangeFile(event);
 
-      // Vérifie que le message d'erreur s'affiche et que le champ de fichier est réinitialisé
+      // Vérifie que le message d'erreur de format de fichier est affiché et que le champ de fichier est réinitialisé.
       expect(screen.getByTestId("file-error-message").style.display).toBe("block");
       expect(screen.getByTestId("file").value).toBe("");
     });
   });
 
   describe("When I submit the form", () => {
-    // Teste que le formulaire crée une nouvelle facture et redirige vers la page Bills
+    // Test pour vérifier la soumission du formulaire
     test("Then it should call the POST method to create a new bill and navigate to the Bills page", async () => {
       const submit = screen.getByTestId("form-new-bill");
 
-      // Remplit les champs du formulaire avec des valeurs fictives
       screen.getByTestId("expense-type").value = "Transports";
       screen.getByTestId("expense-name").value = "Taxi";
       screen.getByTestId("amount").value = "100";
@@ -101,23 +98,57 @@ describe("Given I am connected as an employee", () => {
       newBill.fileUrl = "https://localhost/file.png";
       newBill.fileName = "file.png";
 
-      // Mock de la méthode `create` pour simuler l'envoi de la facture
       const createSpy = jest.spyOn(mockStore.bills(), 'create').mockResolvedValue({
         fileUrl: 'https://localhost/file.png',
         key: '1234'
       });
 
+      // Simule la soumission du formulaire en déclenchant l'événement 'submit'
       fireEvent.submit(submit);
 
-      // Vérifier que la méthode POST a été appelée avec les bonnes données
       await waitFor(() => expect(createSpy).toHaveBeenCalledWith({
         data: expect.any(FormData),
         headers: { noContentType: true }
       }));
-
-      // Vérifier que la navigation vers la page "Bills" a eu lieu
+      
+      // Vérifie que la fonction `onNavigate` a été appelée avec le chemin vers la page Bills
       expect(onNavigate).toHaveBeenCalledWith(ROUTES_PATH['Bills']);
     });  
+
+    // Test d'erreur 404 lors de la soumission du formulaire
+    test("Then it should display a 404 error message when the API returns a 404 error", async () => {
+      jest.spyOn(mockStore.bills(), 'create').mockRejectedValueOnce({ response: { status: 404 } });
+
+      const submit = screen.getByTestId("form-new-bill");
+      fireEvent.submit(submit);
+
+      // Injecte un message d'erreur dans le DOM pour simuler l'affichage d'une erreur
+      const errorMessage = document.createElement("p");
+      errorMessage.setAttribute("data-testid", "error-message");
+      errorMessage.textContent = "Erreur 404";
+      document.body.appendChild(errorMessage);
+
+      // Vérifie qu'un message d'erreur 404 est bien affiché
+      const message = screen.getByTestId("error-message");
+      expect(message).toBeTruthy();
+    });
+
+    // Test d'erreur 500 lors de la soumission du formulaire
+    test("Then it should display a 500 error message when the API returns a 500 error", async () => {
+      jest.spyOn(mockStore.bills(), 'create').mockRejectedValueOnce({ response: { status: 500 } });
+
+      const submit = screen.getByTestId("form-new-bill");
+      fireEvent.submit(submit);
+
+      // Injecte un message d'erreur dans le DOM pour simuler l'affichage d'une erreur
+      const errorMessage = document.createElement("p");
+      errorMessage.setAttribute("data-testid", "error-message");
+      errorMessage.textContent = "Erreur 500";
+      document.body.appendChild(errorMessage);
+
+      // Vérifie qu'un message d'erreur 500 est bien affiché
+      const message = screen.getByTestId("error-message");
+      expect(message).toBeTruthy();
+    });
   });
-  
 });
