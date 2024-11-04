@@ -136,23 +136,23 @@ export default class {
   }
 
   handleShowTickets(e, bills, index) {
-    if (this.counter === undefined || this.index !== index) this.counter = 0
-    if (this.index === undefined || this.index !== index) this.index = index
-    
-    // Nous vérifions si la liste est déjà dépliée
-    const isListOpen = $(`#arrow-icon${this.index}`).css('transform') === 'rotate(0deg)';
+    if (this.counter === undefined || this.index !== index) this.counter = 0;
+    if (this.index === undefined || this.index !== index) this.index = index;
   
-    if (!isListOpen) {
-      // Si la liste est fermée, nous l'ouvrons
-      $(`#arrow-icon${this.index}`).css({ transform: 'rotate(0deg)' });
-      $(`#status-bills-container${this.index}`)
-        .html(cards(filteredBills(bills, getStatus(this.index))));
+    // Toggle l'état de la liste en utilisant une variable d'état
+    const container = $(`#status-bills-container${this.index}`);
+    const arrowIcon = $(`#arrow-icon${this.index}`);
+    const isListOpen = container.html() !== ""; // Si le contenu est vide, la liste est fermée
   
-      this.counter++;
+    if (isListOpen) {
+      // Si la liste est ouverte, nous la fermons
+      arrowIcon.css({ transform: 'rotate(90deg)' });
+      container.html("");
     } else {
-      // Si la liste est déjà ouverte, nous la fermons
-      $(`#arrow-icon${this.index}`).css({ transform: 'rotate(90deg)' });
-      $(`#status-bills-container${this.index}`).html("");
+      // Si la liste est fermée, nous l'ouvrons
+      arrowIcon.css({ transform: 'rotate(0deg)' });
+      container.html(cards(filteredBills(bills, getStatus(this.index))));
+      this.counter++;
     }
   
     // Ajouter des écouteurs pour chaque ticket des listes ouvertes
